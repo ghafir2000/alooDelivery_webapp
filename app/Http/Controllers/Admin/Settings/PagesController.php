@@ -46,6 +46,35 @@ class PagesController extends BaseController
         return back();
     }
 
+    public function getFeedbackMessageView(): View
+    {
+        // Fetch both the status and the message content from the business_settings table
+        $feedbackStatus = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'whatsapp_feedback_status']);
+        $feedbackMessage = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'whatsapp_feedback_message']);
+
+        return view(Pages::FEEDBACK_MESSAGE[VIEW], [
+            'feedbackStatus' => $feedbackStatus?->value ?? 0, // Default to 0 (off) if not set
+            'feedbackMessage' => $feedbackMessage?->value ?? '', // Default to empty string
+        ]);
+    }
+
+    public function updateFeedbackMessage(Request $request): RedirectResponse
+    {
+        // Use updateOrInsert to create the setting if it doesn't exist, or update it if it does.
+        $this->businessSettingRepo->updateOrInsert(
+            type: 'whatsapp_feedback_status',
+            value: $request->get('status', 0) // The switch will send '1' if on, or nothing if off.
+        );
+
+        $this->businessSettingRepo->updateOrInsert(
+            type: 'whatsapp_feedback_message',
+            value: $request->get('feedback_message', '')
+        );
+
+        Toastr::success(translate('feedback_message_settings_updated_successfully'));
+        return back();
+    }
+
     public function getPrivacyPolicyView(): View
     {
         $privacy_policy = $this->businessSettingRepo->getFirstWhere(params: ['type'=>'privacy_policy']);

@@ -25,6 +25,9 @@
         <li class="{{ Request::is('admin/helpTopic/'.\App\Enums\ViewPaths\Admin\HelpTopic::LIST[URI]) ?'active':'' }}">
             <a href="{{route('admin.helpTopic.list')}}">{{translate('FAQ')}}</a>
         </li>
+        <li class="{{ Request::is('admin/business-settings/'.\App\Enums\ViewPaths\Admin\Pages::FEEDBACK_MESSAGE[URI]) ?'active':'' }}">
+            <a href="{{route('admin.business-settings.feedback-message')}}">{{translate('Feedback_Message')}}</a>
+        </li>
 
         @if(theme_root_path() == 'theme_fashion')
             <li class="{{ Request::is('admin/business-settings/'.FeaturesSection::VIEW[URI]) ?'active':'' }}">

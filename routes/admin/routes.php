@@ -826,6 +826,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', '
 
                 Route::get(Pages::VIEW[URI] . '/{page}', 'getPageView')->name('page');
                 Route::post(Pages::VIEW[URI] . '/{page}', 'updatePage')->name('page-update');
+                
+                Route::get(Pages::FEEDBACK_MESSAGE[URI], 'getFeedbackMessageView')->name('feedback-message');
+                Route::post(Pages::FEEDBACK_MESSAGE[URI], 'updateFeedbackMessage')->name('feedback-message-update');
             });
 
             Route::controller(SocialMediaSettingsController::class)->group(function () {

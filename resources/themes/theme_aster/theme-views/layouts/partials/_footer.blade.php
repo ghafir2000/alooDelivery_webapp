@@ -5,8 +5,9 @@
         <div class="container">
             <div class="row gy-3 align-items-center">
                 <div class="col-lg-3 col-sm-3 text-center text-lg-start">
-                    <img width="180" loading="lazy" alt="{{translate('image')}}" class="max-height-80px img-fit"
-                         src="{{ getStorageImages(path: $web_config['footer_logo'], type:'logo') }}">
+                    <img width="100" loading="lazy" alt="{{translate('image')}}" class="max-height-50px img-fit"
+                        style="width: 70px; height: 70px; object-fit: contain;"
+                        src="{{ getStorageImages(path: $web_config['footer_logo'], type:'logo') }}">
                 </div>
                 <div
                     class="col-lg-6 col-sm-6 d-flex justify-content-center justify-content-sm-start justify-content-lg-center">

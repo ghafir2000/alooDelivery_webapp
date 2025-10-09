@@ -23,6 +23,11 @@ enum Pages
         URI => 'about-us',
         VIEW => 'admin-views.business-settings.page.about-us'
     ];
+    
+    const FEEDBACK_MESSAGE = [
+        URI => 'feedback-message',
+        VIEW => 'admin-views.business-settings.page.feedback-message'
+    ];
 
 
 }

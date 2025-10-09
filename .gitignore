@@ -16,3 +16,5 @@ npm-debug.log
 yarn-error.log
 composer-setup.php
 .DS_Store
+git_ssh_key
+git_ssh_key.pub

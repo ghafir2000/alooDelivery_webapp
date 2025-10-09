@@ -68,6 +68,7 @@ class OtpController extends Controller
         try {
             // Generate and store a new token
             $token = rand(100000, 999999);
+            logger("the otp is : $token" );
             $this->phoneOrEmailVerificationRepo->delete(['phone_or_email' => $admin->phone]);
             $this->phoneOrEmailVerificationRepo->add([
                 'phone_or_email' => $admin->phone,

@@ -322,90 +322,114 @@ class OrderController extends BaseController
         OrderStatusHistoryService     $orderStatusHistoryService,
     ): JsonResponse
     {
-
-        
-        // --- ADD THIS LINE TO LOG THE INCOMING REQUEST ---
         Log::info('Order status update request received:', $request->all());
-        // --- END OF ADDED LINE ---
 
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['id']], relations: ['customer', 'seller.shop', 'deliveryMan']);
 
         if (!$order['is_guest'] && !isset($order['customer'])) {
             return response()->json(['customer_status' => 0], 200);
         }
-        $this->orderRepo->updateStockOnOrderStatusChange($request['id'], $request['order_status']);
-        $this->orderRepo->update(id: $request['id'], data: ['order_status' => $request['order_status']]);
-        if ($request['order_status'] == 'delivered') {
-            $this->orderRepo->update(id: $request['id'], data: ['payment_status' => 'paid', 'is_pause' => 0]);
-            $this->orderDetailRepo->updateWhere(params: ['order_id' => $order['id']], data: ['delivery_status' => $request['order_status'], 'payment_status' => 'paid']);
-        }
-        event(new OrderStatusEvent(key: $request['order_status'], type: 'customer', order: $order));
-        if ($request['order_status'] == 'canceled') {
-            event(new OrderStatusEvent(key: 'canceled', type: 'delivery_man', order: $order));
-        }
-        if ($order['seller_is'] == 'seller') {
-            if ($request['order_status'] == 'canceled') {
-                event(new OrderStatusEvent(key: 'canceled', type: 'seller', order: $order));
-            } elseif ($request['order_status'] == 'delivered') {
-                event(new OrderStatusEvent(key: 'delivered', type: 'seller', order: $order));
-            }
+
+        // === THE FIX: CAPTURE THE STATE BEFORE ANY CHANGES ===
+        $originalStatus = $order->order_status;
+        $newStatus = $request['order_status'];
+
+
+        // --- Only proceed if the status is actually changing ---
+        if ($originalStatus == $newStatus) {
+            Log::warning("Order #{$order->id} status is already '{$newStatus}'. Halting redundant update.");
+            return response()->json(['status' => 'success', 'message' => 'Status is already updated.']);
         }
 
-        $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
+        // --- All database updates happen here ---
+        $this->orderRepo->updateStockOnOrderStatusChange($request['id'], $newStatus);
+        $this->orderRepo->update(id: $request['id'], data: ['order_status' => $newStatus]);
 
-        if ($loyaltyPointStatus == 1 && !$order['is_guest'] && $request['order_status'] == 'delivered') {
-            $this->loyaltyPointTransactionRepo->addLoyaltyPointTransaction(userId: $order['customer_id'], reference: $order['id'], amount: usdToDefaultCurrency(amount: $order['order_amount'] - $order['shipping_cost']), transactionType: 'order_place');
-        }
-
-        $refEarningStatus = getWebConfig(name: 'ref_earning_status') ?? 0;
-        $refEarningExchangeRate = getWebConfig(name: 'ref_earning_exchange_rate') ?? 0;
-
-        if (!$order['is_guest'] && $refEarningStatus == 1 && $request['order_status'] == 'delivered') {
-            $customer = $this->customerRepo->getFirstWhere(params: ['id' => $order['customer_id']]);
-            $isFirstOrder = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id'], 'order_status' => 'delivered', 'payment_status' => 'paid']);
-            $referredByUser = $this->customerRepo->getFirstWhere(params: ['id' => $customer['referred_by']]);
-            if ($isFirstOrder == 1 && isset($customer->referred_by) && isset($referredByUser)) {
-                $this->walletTransactionRepo->addWalletTransaction(
-                    user_id: $referredByUser['id'],
-                    amount: floatval($refEarningExchangeRate),
-                    transactionType: 'add_fund_by_admin',
-                    reference: 'earned_by_referral');
-            }
-        }
-
-        if ($order['delivery_man_id'] && $request->order_status == 'delivered') {
-            $deliverymanWallet = $this->deliveryManWalletRepo->getFirstWhere(params: ['delivery_man_id' => $order['delivery_man_id']]);
-            $cashInHand = $order['payment_method'] == 'cash_on_delivery' ? $order['order_amount'] : 0;
-
-            if (empty($deliverymanWallet)) {
-                $deliverymanWalletData = $deliveryManWalletService->getDeliveryManData(id: $order['delivery_man_id'], deliverymanCharge: $order['deliveryman_charge'], cashInHand: $cashInHand);
-                $this->deliveryManWalletRepo->add(data: $deliverymanWalletData);
-            } else {
-                $deliverymanWalletData = [
-                    'current_balance' => $deliverymanWallet['current_balance'] + $order['deliveryman_charge'] ?? 0,
-                    'cash_in_hand' => $deliverymanWallet['cash_in_hand'] + $cashInHand ?? 0,
-                ];
-                $this->deliveryManWalletRepo->updateWhere(params: ['delivery_man_id' => $order['delivery_man_id']], data: $deliverymanWalletData);
-            }
-            if ($order['deliveryman_charge'] && $request['order_status'] == 'delivered') {
-                $deliveryManTransactionData = $deliveryManTransactionService->getDeliveryManTransactionData(amount: $order['deliveryman_charge'], addedBy: 'admin', id: $order['delivery_man_id'], transactionType: 'deliveryman_charge');
-                $this->deliveryManTransactionRepo->add($deliveryManTransactionData);
-            }
-        }
-
-        $orderStatusHistoryData = $orderStatusHistoryService->getOrderHistoryData(orderId: $request['id'], userId: 0, userType: 'admin', status: $request['order_status']);
+        $orderStatusHistoryData = $orderStatusHistoryService->getOrderHistoryData(orderId: $request['id'], userId: 0, userType: 'admin', status: $newStatus);
         $this->orderStatusHistoryRepo->add($orderStatusHistoryData);
 
-        $transaction = $this->orderTransactionRepo->getFirstWhere(params: ['order_id' => $order['id']]);
-        if (isset($transaction) && $transaction['status'] == 'disburse') {
-            return response()->json($request['order_status']);
-        }
-        if ($request['order_status'] == 'delivered' && $order['seller_id'] != null) {
-            $this->orderRepo->manageWalletOnOrderStatusChange(order: $order, receivedBy: 'admin');
-        }
-        return response()->json($request['order_status']);
-    }
 
+        // === CONSOLIDATED LOGIC FOR 'DELIVERED' STATE CHANGE ===
+        if ($newStatus == 'delivered') {
+            Log::info("Order #{$order->id} status changing from '{$originalStatus}' to 'delivered'. Processing delivered actions.");
+
+            // Database updates for delivered status
+            $this->orderRepo->update(id: $request['id'], data: ['payment_status' => 'paid', 'is_pause' => 0]);
+            $this->orderDetailRepo->updateWhere(params: ['order_id' => $order['id']], data: ['delivery_status' => 'delivered', 'payment_status' => 'paid']);
+
+            // --- CONSOLIDATED EVENT DISPATCH ---
+            // Dispatch one event for the customer
+            event(new OrderStatusEvent(key: 'delivered', type: 'customer', order: $order));
+            // And another for the seller if applicable
+            if ($order['seller_is'] == 'seller') {
+                event(new OrderStatusEvent(key: 'delivered', type: 'seller', order: $order));
+            }
+
+            // --- All other 'delivered' side-effects go here ---
+            // Loyalty Points Logic
+            $loyaltyPointStatus = getWebConfig(name: 'loyalty_point_status');
+            if ($loyaltyPointStatus == 1 && !$order['is_guest']) {
+                $this->loyaltyPointTransactionRepo->addLoyaltyPointTransaction(userId: $order['customer_id'], reference: $order['id'], amount: usdToDefaultCurrency(amount: $order['order_amount'] - $order['shipping_cost']), transactionType: 'order_place');
+            }
+
+            // Referral Earnings Logic
+            $refEarningStatus = getWebConfig(name: 'ref_earning_status') ?? 0;
+            $refEarningExchangeRate = getWebConfig(name: 'ref_earning_exchange_rate') ?? 0;
+            if (!$order['is_guest'] && $refEarningStatus == 1) {
+                $customer = $this->customerRepo->getFirstWhere(params: ['id' => $order['customer_id']]);
+                $isFirstOrder = $this->orderRepo->getListWhereCount(filters: ['customer_id' => $order['customer_id'], 'order_status' => 'delivered', 'payment_status' => 'paid']);
+                $referredByUser = $this->customerRepo->getFirstWhere(params: ['id' => $customer['referred_by']]);
+                if ($isFirstOrder == 1 && isset($customer->referred_by) && isset($referredByUser)) {
+                    $this->walletTransactionRepo->addWalletTransaction(user_id: $referredByUser['id'], amount: floatval($refEarningExchangeRate), transactionType: 'add_fund_by_admin', reference: 'earned_by_referral');
+                }
+            }
+
+            // Delivery Man Wallet Logic
+            if ($order['delivery_man_id']) {
+                // ... (your existing delivery man logic remains here) ...
+                $deliverymanWallet = $this->deliveryManWalletRepo->getFirstWhere(params: ['delivery_man_id' => $order['delivery_man_id']]);
+                $cashInHand = $order['payment_method'] == 'cash_on_delivery' ? $order['order_amount'] : 0;
+
+                if (empty($deliverymanWallet)) {
+                    $deliverymanWalletData = $deliveryManWalletService->getDeliveryManData(id: $order['delivery_man_id'], deliverymanCharge: $order['deliveryman_charge'], cashInHand: $cashInHand);
+                    $this->deliveryManWalletRepo->add(data: $deliverymanWalletData);
+                } else {
+                    $deliverymanWalletData = [
+                        'current_balance' => $deliverymanWallet['current_balance'] + $order['deliveryman_charge'] ?? 0,
+                        'cash_in_hand' => $deliverymanWallet['cash_in_hand'] + $cashInHand ?? 0,
+                    ];
+                    $this->deliveryManWalletRepo->updateWhere(params: ['delivery_man_id' => $order['delivery_man_id']], data: $deliverymanWalletData);
+                }
+                if ($order['deliveryman_charge']) {
+                    $deliveryManTransactionData = $deliveryManTransactionService->getDeliveryManTransactionData(amount: $order['deliveryman_charge'], addedBy: 'admin', id: $order['delivery_man_id'], transactionType: 'deliveryman_charge');
+                    $this->deliveryManTransactionRepo->add($deliveryManTransactionData);
+                }
+            }
+
+            // Seller Wallet Logic
+            if ($order['seller_id'] != null) {
+                $transaction = $this->orderTransactionRepo->getFirstWhere(params: ['order_id' => $order['id']]);
+                if (!isset($transaction) || $transaction['status'] != 'disburse') {
+                    $this->orderRepo->manageWalletOnOrderStatusChange(order: $order, receivedBy: 'admin');
+                }
+            }
+        }
+        // === LOGIC FOR 'CANCELED' STATE CHANGE ===
+        elseif ($newStatus == 'canceled') {
+            Log::info("Order #{$order->id} status changing from '{$originalStatus}' to 'canceled'. Processing canceled actions.");
+            event(new OrderStatusEvent(key: 'canceled', type: 'customer', order: $order));
+            event(new OrderStatusEvent(key: 'canceled', type: 'delivery_man', order: $order));
+            if ($order['seller_is'] == 'seller') {
+                event(new OrderStatusEvent(key: 'canceled', type: 'seller', order: $order));
+            }
+        } else {
+            // --- This handles all other status changes like processing, shipped etc. ---
+            Log::info("Order #{$order->id} status changing from '{$originalStatus}' to '{$newStatus}'.");
+            event(new OrderStatusEvent(key: $newStatus, type: 'customer', order: $order));
+        }
+
+        return response()->json($newStatus);
+    }
     public function updateAddress(Request $request): RedirectResponse
     {
         $order = $this->orderRepo->getFirstWhere(params: ['id' => $request['order_id']], relations: ['seller.shop', 'deliveryMan']);
