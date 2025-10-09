@@ -297,7 +297,7 @@ class HomeController extends Controller
             }
         }
 
-        $bannerTypeSidebarBanner = $bannerTypeSidebarBanner ? $bannerTypeSidebarBanner[0] : [];
+        $bannerTypeSidebarBanner = $bannerTypeSidebarBanner ? array_slice($bannerTypeSidebarBanner, 0, 2) : [];
         $bannerTypeMainSectionBanner = $bannerTypeMainSectionBanner ? $bannerTypeMainSectionBanner[0] : [];
         $bannerTypeTopSideBanner = $bannerTypeTopSideBanner ? $bannerTypeTopSideBanner[0] : [];
         $bannerTypeFooterBanner = $bannerTypeFooterBanner ? array_slice($bannerTypeFooterBanner, 0, 2) : [];

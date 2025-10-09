@@ -76,9 +76,9 @@
             @else
                 <div class="d-none d-sm-block">
                     @if($bannerTypeSidebarBanner)
-                        <a href="{{ $bannerTypeSidebarBanner['url'] }}">
+                        <a href="{{ $bannerTypeSidebarBanner[0]['url'] }}">
                             <img alt="" class="dark-support rounded w-100"
-                                 src="{{ getStorageImages(path: $bannerTypeSidebarBanner['photo_full_url'],type:'banner') }}">
+                                 src="{{ getStorageImages(path: $bannerTypeSidebarBanner[0]['photo_full_url'],type:'banner') }}">
                         </a>
                     @else
                         <img src="{{ theme_asset('assets/img/top-side-banner-placeholder.png') }}"
