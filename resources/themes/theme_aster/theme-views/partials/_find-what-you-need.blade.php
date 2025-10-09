@@ -76,9 +76,9 @@
             @else
                 <div class="d-none d-sm-block">
                     @if($bannerTypeSidebarBanner)
-                        <a href="{{ $bannerTypeSidebarBanner[0]['url'] }}">
+                        <a href="{{ $bannerTypeSidebarBanner['url'] }}">
                             <img alt="" class="dark-support rounded w-100"
-                                 src="{{ getStorageImages(path: $bannerTypeSidebarBanner[0]['photo_full_url'],type:'banner') }}">
+                                 src="{{ getStorageImages(path: $bannerTypeSidebarBanner['photo_full_url'],type:'banner') }}">
                         </a>
                     @else
                         <img src="{{ theme_asset('assets/img/top-side-banner-placeholder.png') }}"
@@ -273,9 +273,9 @@
             @else
                 <div class="col-12 d-sm-none">
                     @if($bannerTypeTopSideBanner)
-                        <a href="{{ $bannerTypeTopSideBanner['url'] }}">
+                        <a href="{{ $bannerTypeTopSideBanner[0]['url'] }}">
                             <img alt="" class="dark-support rounded w-100"
-                                 src="{{ getStorageImages(path: ($bannerTypeTopSideBanner ? $bannerTypeTopSideBanner->photo_full_url : null), type:'banner', source: theme_asset('assets/img/top-side-banner-placeholder.png')) }}">
+                                 src="{{ getStorageImages(path: ($bannerTypeTopSideBanner[0] ? $bannerTypeTopSideBanner[0]->photo_full_url : null), type:'banner', source: theme_asset('assets/img/top-side-banner-placeholder.png')) }}">
                         </a>
                     @else
                         <img src="{{ theme_asset('assets/img/top-side-banner-placeholder.png') }}"

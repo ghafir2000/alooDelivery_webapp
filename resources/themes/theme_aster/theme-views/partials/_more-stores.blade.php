@@ -59,8 +59,8 @@
         @else
             <div class="d-sm-none mb-4">
                 @if($bannerTypeSidebarBanner)
-                    <a href="{{ $bannerTypeSidebarBanner[0]['url'] }}">
-                        <img src="{{ getStorageImages(path: $bannerTypeSidebarBanner[0]['photo_full_url'], type:'banner') }}"
+                    <a href="{{ $bannerTypeSidebarBanner['url'] }}">
+                        <img src="{{ getStorageImages(path: $bannerTypeSidebarBanner['photo_full_url'], type:'banner') }}"
                             alt="" class="dark-support rounded w-100">
                     </a>
                 @else

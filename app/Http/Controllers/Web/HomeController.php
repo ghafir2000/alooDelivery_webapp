@@ -297,9 +297,9 @@ class HomeController extends Controller
             }
         }
 
-        $bannerTypeSidebarBanner = $bannerTypeSidebarBanner ? array_slice($bannerTypeSidebarBanner, 0, 2) : [];
+        $bannerTypeSidebarBanner = $bannerTypeSidebarBanner ? $bannerTypeSidebarBanner[0] : [];
         $bannerTypeMainSectionBanner = $bannerTypeMainSectionBanner ? $bannerTypeMainSectionBanner[0] : [];
-        $bannerTypeTopSideBanner = $bannerTypeTopSideBanner ? $bannerTypeTopSideBanner[0] : [];
+        $bannerTypeTopSideBanner = $bannerTypeTopSideBanner ? array_slice($bannerTypeTopSideBanner, 0, 2) : [];
         $bannerTypeFooterBanner = $bannerTypeFooterBanner ? array_slice($bannerTypeFooterBanner, 0, 2) : [];
 
         $decimal_point = getWebConfig(name: 'decimal_point_settings');

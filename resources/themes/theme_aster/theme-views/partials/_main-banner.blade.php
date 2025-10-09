@@ -160,7 +160,7 @@
                             <div class="d-flex flex-column gap-3 h-100">
 
                                 {{-- This loop will correctly handle the collection of banners --}}
-                                @foreach($bannerTypeSidebarBanner as $banner)
+                                @foreach($bannerTypeTopSideBanner as $banner)
                                     <div class="flex-grow-1">
                                         <a href="{{ $banner['url'] }}" class="ad-hover h-100">
                                             <img src="{{ getStorageImages(path: $banner['photo_full_url'], type:'banner') }}"
@@ -170,7 +170,7 @@
                                 @endforeach
 
                                 {{-- Placeholder logic for when there are 0 banners --}}
-                                @if(count($bannerTypeSidebarBanner) == 0)
+                                @if(count($bannerTypeTopSideBanner) == 0)
                                     <div class="flex-grow-1">
                                         <img src="{{ theme_asset('assets/img/top-side-banner-placeholder.png') }}"
                                             loading="lazy" alt="Placeholder" class="dark-support rounded w-100 img-fit h-100">
@@ -182,7 +182,7 @@
                                 @endif
 
                                 {{-- Placeholder logic for when there is only 1 banner --}}
-                                @if(count($bannerTypeSidebarBanner) == 1)
+                                @if(count($bannerTypeTopSideBanner) == 1)
                                     <div class="flex-grow-1">
                                         <img src="{{ theme_asset('assets/img/top-side-banner-placeholder.png') }}"
                                             loading="lazy" alt="Placeholder" class="dark-support rounded w-100 img-fit h-100">
