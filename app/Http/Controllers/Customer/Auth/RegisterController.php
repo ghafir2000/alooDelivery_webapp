@@ -7,6 +7,7 @@ use App\Contracts\Repositories\CustomerRepositoryInterface;
 use App\Contracts\Repositories\LoginSetupRepositoryInterface;
 use App\Contracts\Repositories\PhoneOrEmailVerificationRepositoryInterface;
 use App\Events\EmailVerificationEvent;
+use App\Events\NewUserEvent;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Web\CustomerRegistrationRequest;
 use App\Models\BusinessSetting;
@@ -58,6 +59,7 @@ class RegisterController extends Controller
     {
         $referUser = $request['referral_code'] ? $this->customerRepo->getFirstWhere(params: ['referral_code' => $request['referral_code']]) : null;
         $user = $this->customerRepo->add(data: $this->customerAuthService->getCustomerRegisterData($request, $referUser));
+        logger('register user on submitRegisterData', [$user]);
 
         $phoneVerification = getLoginConfig(key: 'phone_verification');
         $emailVerification = getLoginConfig(key: 'email_verification');
@@ -255,6 +257,10 @@ class RegisterController extends Controller
             if ($tokenVerifyStatus) {
                 $data = $verificationType == 'phone_verification' ? ['is_phone_verified' => 1] : ['is_email_verified' => 1];
                 $this->customerRepo->updateWhere(params: ['id' => $customer['id']], data: $data);
+
+                $verifiedUser = $this->customerRepo->getFirstWhere(params: ['id' => $customer['id']]);
+                NewUserEvent::dispatch($verifiedUser);
+
                 $this->phoneOrEmailVerificationRepo->delete(params: ['phone_or_email' => $identity]);
                 Toastr::success(translate('verification_done_successfully'));
                 return redirect(route('customer.auth.login'));

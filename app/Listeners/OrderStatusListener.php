@@ -9,6 +9,7 @@ use App\Services\NotificationService;
 use App\Traits\PushNotificationTrait;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use App\Contracts\Repositories\BusinessSettingRepositoryInterface;
 
 class OrderStatusListener
 {
@@ -21,7 +22,8 @@ class OrderStatusListener
     /**
      * Create the event listener.
      */
-    public function __construct( NotificationService $whatsAppService)
+    public function __construct( NotificationService $whatsAppService,
+    private readonly BusinessSettingRepositoryInterface $businessSettingRepo,)
     {
         $this->whatsAppService = $whatsAppService;
     }
@@ -35,10 +37,18 @@ class OrderStatusListener
         logger("Order status changed to  . $event->key  on the call of the event type :  $event->type");
 
         if ($event->key === 'delivered' && $event->type === 'customer') {
-            // Fetch the settings from the database
-            $feedbackStatus = getWebConfig(name: 'whatsapp_feedback_status');
-            $rawFeedbackMessage = getWebConfig(name: 'whatsapp_feedback_message');
+             // 1. Fetch the single 'feedback_settings' row from the database.
+            $feedbackSettings = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'feedback_settings']);
 
+            
+            // 2. Decode the JSON value. If it doesn't exist or is invalid, default to an empty array.
+            $settingsData = json_decode($feedbackSettings->value,true) ?: [];
+            // dd($settingsData['status']);
+
+            // 3. Extract the status and message from the decoded array, providing default values.
+            $feedbackStatus = $settingsData['status']?? 0; // Default to 0 (off)
+            $rawFeedbackMessage = $settingsData['message']?? ''; // Default to an empty string
+        
             // ONLY proceed if the feature is enabled and the message is not empty
             if (isset($feedbackStatus) && $feedbackStatus == 1 && !empty($rawFeedbackMessage)) {
                 Log::info("WhatsApp Feedback feature is enabled. Preparing message for order #{$event->order->id}.");
@@ -68,4 +78,5 @@ class OrderStatusListener
         $order = $event->order;
         $this->sendOrderNotification(key: $key, type: $type, order: $order);
     }
+
 }

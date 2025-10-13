@@ -1,8 +1,6 @@
-{{-- resources/views/admin-views/business-settings/page/feedback-message.blade.php --}}
-
 @extends('layouts.back-end.app')
 
-@section('title', translate('Feedback_Message'))
+@section('title', translate('welcome_message'))
 
 @push('css_or_js')
     <link href="{{ dynamicAsset(path: 'public/assets/back-end/plugins/summernote/summernote.min.css') }}" rel="stylesheet">
@@ -22,26 +20,26 @@
 
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">{{translate('Feedback_Message_Settings')}}</h5>
+            <h5 class="mb-0">{{translate('welcome_message_settings')}}</h5>
         </div>
-        <form action="{{ route('admin.business-settings.feedback-message-update') }}" method="post">
+        <form action="{{ route('admin.business-settings.welcome-message-update') }}" method="post">
             @csrf
             <div class="card-body">
 
                 {{-- The Toggle Switch --}}
                 <div class="form-group d-flex justify-content-between align-items-center border rounded p-3">
-                    <h5 class="mb-0">{{ translate('Send_Feedback_Message_After_Delivery') }}</h5>
+                    <h5 class="mb-0">{{ translate('Show_Welcome_Message') }}</h5>
                     <label class="switcher">
                         <input type="checkbox" class="switcher_input" name="status" value="1"
-                               id="feedback-status-checkbox" {{ $feedbackStatus == 1 ? 'checked' : '' }}>
+                               id="welcome-status-checkbox" {{ $welcomeStatus == 1 ? 'checked' : '' }}>
                         <span class="switcher_control"></span>
                     </label>
                 </div>
 
                 {{-- The Message Text Area --}}
                 <div class="form-group mt-4">
-                    <label for="editor" class="title-color">{{ translate('Feedback_Message_Content') }}</label>
-                    <textarea name="feedback_message" id="editor" class="form-control summernote">{{ $feedbackMessage }}</textarea>
+                    <label for="editor" class="title-color">{{ translate('Welcome_Message_Content') }}</label>
+                    <textarea name="welcome_message" id="editor" class="form-control summernote">{{ $welcomeMessage }}</textarea>
                 </div>
 
                 <div class="d-flex justify-content-end">

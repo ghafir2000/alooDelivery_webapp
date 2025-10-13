@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers\RestAPI\v1\auth;
 
-use App\Http\Controllers\Controller;
-use App\Models\PhoneOrEmailVerification;
+use Carbon\Carbon;
 use App\Models\User;
 use App\Utils\Helpers;
 use App\Utils\SMSModule;
-use Carbon\Carbon;
 use Carbon\CarbonInterval;
+use App\Events\NewUserEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Controllers\Controller;
 use Modules\Gateways\Traits\SmsGateway;
+use App\Models\PhoneOrEmailVerification;
+use Illuminate\Support\Facades\Validator;
 
 class PhoneVerificationController extends Controller
 {
@@ -140,6 +141,9 @@ class PhoneVerificationController extends Controller
             $user->phone = $request['phone'];
             $user->is_phone_verified = 1;
             $user->save();
+            
+            NewUserEvent::dispatch($user);
+
             $verify->delete();
 
             $token = $user->createToken('LaravelAuthApp')->accessToken;

@@ -28,6 +28,9 @@
         <li class="{{ Request::is('admin/business-settings/'.\App\Enums\ViewPaths\Admin\Pages::FEEDBACK_MESSAGE[URI]) ?'active':'' }}">
             <a href="{{route('admin.business-settings.feedback-message')}}">{{translate('Feedback_Message')}}</a>
         </li>
+        <li class="{{ Request::is('admin/business-settings/'.\App\Enums\ViewPaths\Admin\Pages::WELCOME_MESSAGE[URI]) ?'active':'' }}">
+            <a href="{{route('admin.business-settings.welcome-message')}}">{{translate('Welcome_Message')}}</a>
+        </li>
 
         @if(theme_root_path() == 'theme_fashion')
             <li class="{{ Request::is('admin/business-settings/'.FeaturesSection::VIEW[URI]) ?'active':'' }}">

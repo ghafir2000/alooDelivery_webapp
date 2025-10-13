@@ -48,30 +48,74 @@ class PagesController extends BaseController
 
     public function getFeedbackMessageView(): View
     {
-        // Fetch both the status and the message content from the business_settings table
-        $feedbackStatus = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'whatsapp_feedback_status']);
-        $feedbackMessage = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'whatsapp_feedback_message']);
+         // 1. Fetch the single 'feedback_settings' row from the database.
+        $feedbackSettings = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'feedback_settings']);
 
+        
+        // 2. Decode the JSON value. If it doesn't exist or is invalid, default to an empty array.
+        $settingsData = json_decode($feedbackSettings->value,true) ?: [];
+        // dd($settingsData['status']);
+
+        // 3. Extract the status and message from the decoded array, providing default values.
+        $feedbackStatus = $settingsData['status']?? 0; // Default to 0 (off)
+        $feedbackMessage = $settingsData['message']?? ''; // Default to an empty string
+        
         return view(Pages::FEEDBACK_MESSAGE[VIEW], [
-            'feedbackStatus' => $feedbackStatus?->value ?? 0, // Default to 0 (off) if not set
-            'feedbackMessage' => $feedbackMessage?->value ?? '', // Default to empty string
+            'feedbackStatus' => $feedbackStatus, // Default to 0 (off) if not set
+            'feedbackMessage' => $feedbackMessage, // Default to empty string
         ]);
     }
 
     public function updateFeedbackMessage(Request $request): RedirectResponse
     {
         // Use updateOrInsert to create the setting if it doesn't exist, or update it if it does.
-        $this->businessSettingRepo->updateOrInsert(
-            type: 'whatsapp_feedback_status',
-            value: $request->get('status', 0) // The switch will send '1' if on, or nothing if off.
-        );
+        $value = json_encode([
+            'status' => $request->get('status', 0),
+            'message' => $request->get('feedback_message', ''),
+        ]);
 
         $this->businessSettingRepo->updateOrInsert(
-            type: 'whatsapp_feedback_message',
-            value: $request->get('feedback_message', '')
+            type: 'feedback_settings',
+            value: $value
         );
 
         Toastr::success(translate('feedback_message_settings_updated_successfully'));
+        return back();
+    }
+    
+    
+    public function getWelcomeMessageView(): View
+    {
+        // 1. Fetch the single 'welcome_settings' row from the database.
+        $welcomeSettings = $this->businessSettingRepo->getFirstWhere(params: ['type' => 'welcome_settings']);
+
+        // 2. Decode the JSON value. If it doesn't exist or is invalid, default to an empty array.
+        $settingsData = json_decode($welcomeSettings->value,true) ?: [];
+
+        // 3. Extract the status and message from the decoded array, providing default values.
+        $welcomeStatus = $settingsData['status']?? 0; // Default to 0 (off)
+        $welcomeMessage = $settingsData['message']?? ''; // Default to an empty string
+
+        return view(Pages::WELCOME_MESSAGE[VIEW], [
+            'welcomeStatus' => $welcomeStatus, // Default to 0 (off) if not set
+            'welcomeMessage' => $welcomeMessage, // Default to empty string
+        ]);
+    }
+
+    public function updateWelcomeMessage(Request $request): RedirectResponse
+    {
+        // Use updateOrInsert to create the setting if it doesn't exist, or update it if it does.
+        $value = json_encode([
+            'status' => $request->get('status', 0),
+            'message' => $request->get('welcome_message', ''),
+        ]);
+
+        $this->businessSettingRepo->updateOrInsert(
+            type: 'welcome_settings',
+            value: $value
+        );
+
+        Toastr::success(translate('welcome_message_settings_updated_successfully'));
         return back();
     }
 

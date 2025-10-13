@@ -23,7 +23,7 @@ class CustomerMiddleware
         }
 
         // Check 2: Is the account unverified?
-        if (is_null($user->email_verified_at) && is_null($user->phone_verified_at)) {
+        if (!$user->is_phone_verified && !$user->is_email_verified) {
             logger('CustomerMiddleware', [$user]);
             logger('CustomerMiddleware', [
                 'identity' => base64_encode($user->phone ?? $user->email),

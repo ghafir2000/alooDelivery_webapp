@@ -2,31 +2,32 @@
 
 namespace App\Http\Controllers\RestAPI\v1\auth;
 
-use App\Contracts\Repositories\BusinessSettingRepositoryInterface;
-use App\Contracts\Repositories\CustomerRepositoryInterface;
-use App\Contracts\Repositories\LoginSetupRepositoryInterface;
-use App\Contracts\Repositories\PhoneOrEmailVerificationRepositoryInterface;
-use App\Events\EmailVerificationEvent;
-use App\Events\PasswordResetEvent;
-use App\Http\Controllers\Controller;
-use App\Mail\PasswordResetMail;
-use App\Models\PhoneOrEmailVerification;
-use App\Services\Web\CustomerAuthService;
-use App\Traits\CustomerTrait;
 use App\User;
+use Firebase\JWT\JWT;
 use App\Utils\Helpers;
+use GuzzleHttp\Client;
 use App\Utils\SMSModule;
 use Carbon\CarbonInterval;
-use Firebase\JWT\JWT;
+use Illuminate\Support\Str;
+use App\Events\NewUserEvent;
 use Illuminate\Http\Request;
+use App\Traits\CustomerTrait;
+use Illuminate\Support\Carbon;
+use App\Mail\PasswordResetMail;
+use Illuminate\Http\JsonResponse;
+use App\Events\PasswordResetEvent;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
+use App\Events\EmailVerificationEvent;
+use App\Models\PhoneOrEmailVerification;
+use App\Services\Web\CustomerAuthService;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
-use Illuminate\Http\JsonResponse;
-use GuzzleHttp\Client;
-use Illuminate\Support\Carbon;
+use App\Contracts\Repositories\CustomerRepositoryInterface;
+use App\Contracts\Repositories\LoginSetupRepositoryInterface;
+use App\Contracts\Repositories\BusinessSettingRepositoryInterface;
+use App\Contracts\Repositories\PhoneOrEmailVerificationRepositoryInterface;
 
 class CustomerAPIAuthController extends Controller
 {
