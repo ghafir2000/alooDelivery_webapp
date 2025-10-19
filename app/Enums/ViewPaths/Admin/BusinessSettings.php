@@ -19,6 +19,11 @@ enum BusinessSettings
         VIEW => 'admin-views.business-settings.analytics.index'
     ];
 
+    const SOCIAL_MEDIA = [
+        URI => 'social-media',
+        VIEW => 'admin-views.business-settings.social-media'
+    ];
+
     const ANALYTICS_UPDATE = [
         URI => 'analytics-update',
         VIEW => ''

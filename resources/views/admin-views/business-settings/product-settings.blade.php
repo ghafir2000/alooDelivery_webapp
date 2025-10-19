@@ -4,6 +4,7 @@
 
 @section('content')
     <div class="content container-fluid">
+        <!-- Page Title -->
         <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
             <h2 class="h1 mb-0 text-capitalize d-flex align-items-center gap-2">
                 <img src="{{dynamicAsset(path: 'public/assets/back-end/img/business-setup.png')}}" alt="">
@@ -26,7 +27,10 @@
                 </div>
             </div>
         </div>
+
+        <!-- Inline Menu -->
         @include('admin-views.business-settings.business-setup-inline-menu')
+
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0 text-capitalize d-flex gap-2 text-capitalize">
@@ -38,25 +42,52 @@
                 <form action="{{ route('admin.product-settings.index') }}" method="post"
                       enctype="multipart/form-data">
                     @csrf
-                    <div class="row align-items-end">
-                        <div class="col-md-6 col-lg-4">
+                    <div class="row g-3">
+                        <!-- Digital Product Toggle -->
+                        <div class="col-md-6">
+                            <div class="form-group d-flex justify-content-between align-items-center border rounded p-3">
+                                <h5 class="mb-0 text-capitalize">{{ translate('digital_product') }}</h5>
+                                <label class="switcher">
+                                    <input type="hidden" name="digital_product" value="0">
+                                    <input type="checkbox" class="switcher_input" name="digital_product" value="1"
+                                           id="digital-product-checkbox" {{ (isset($digitalProduct) && $digitalProduct['value'] == 1) ? 'checked' : '' }}>
+                                    <span class="switcher_control"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Product Brand Toggle -->
+                        <div class="col-md-6">
+                            <div class="form-group d-flex justify-content-between align-items-center border rounded p-3">
+                                <h5 class="mb-0 text-capitalize">{{ translate('product_brand') }}</h5>
+                                <label class="switcher">
+                                    <input type="hidden" name="product_brand" value="0">
+                                    <input type="checkbox" class="switcher_input" name="product_brand" value="1"
+                                           id="product-brand-checkbox" {{ (isset($brand) && $brand['value'] == 1) ? 'checked' : '' }}>
+                                    <span class="switcher_control"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Re-order Level Input -->
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <div class="d-flex gap-2">
                                     <label class="title-color d-flex text-capitalize"
                                            for="stock_limit">{{translate('re-order_level')}}</label>
                                     <span class="input-label-secondary cursor-pointer" data-toggle="tooltip"
-                                          data-placement="right" title="{{translate('set_the_stock_limit_for_the_Reorder_level')}}
-                                    {{translate ('vendors_can_see_all_products_that_need_to_be_re_stocked_in_a_section_when_they_reach_this_ReOrder_Level')}}">
+                                          data-placement="top" title="{{translate('set_the_stock_limit_for_the_Reorder_level')}} {{translate ('vendors_can_see_all_products_that_need_to_be_re_stocked_in_a_section_when_they_reach_this_ReOrder_Level')}}">
                                         <img width="16" src="{{dynamicAsset(path: 'public/assets/back-end/img/info-circle.svg')}}"
                                              alt="">
                                     </span>
                                 </div>
-                                <input class="form-control" type="text" name="stock_limit" id="stock_limit"
-                                       value="{{ $stockLimit['value'] }}"
+                                <input class="form-control" type="number" name="stock_limit" id="stock_limit"
+                                       value="{{ $stockLimit['value'] ?? 0 }}"
                                        placeholder="{{translate('ex').':'.'10'}}">
                             </div>
                         </div>
 
+                        <!-- Save Button -->
                         <div class="col-12">
                             <div class="d-flex justify-content-end">
                                 <button type="submit" class="btn btn--primary px-4">{{translate('save')}}</button>

@@ -37,7 +37,10 @@ class CleanApplicationData extends Command
 
         // This list is carefully ordered. Child tables are deleted before parent tables.
         $tablesToTruncate = [
+
             // --- Order & Refund Related (Children First) ---
+            'admin_wallets',
+            'admin_wallet_histories',
             'order_status_histories',
             'order_details',
             'order_expected_delivery_histories',
@@ -50,6 +53,9 @@ class CleanApplicationData extends Command
 
             // --- Product & Cart Related ---
             'carts',
+            'brands',
+            'category_shipping_costs',
+            'categories',
             'digital_product_otp_verifications',
             'digital_product_variations',
             'flash_deal_products',
@@ -72,7 +78,9 @@ class CleanApplicationData extends Command
             'deliveryman_notifications',
             'delivery_man_transactions',
             'deliveryman_wallets',
-            'delivery_men',
+            'order_expected_delivery_histories',
+            'order_delivery_verifications',
+            'delivery_zip_codes',
            
             // --- Seller / Vendor Related ---
             'seller_wallet_histories',
@@ -103,7 +111,7 @@ class CleanApplicationData extends Command
             'subscriptions',
             'support_tickets',
             'support_ticket_convs',
-            'withdrawal_requests',
+            'withdraw_requests',
             'guest_users',
             'search_functions',
 

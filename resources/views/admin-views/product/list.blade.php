@@ -244,30 +244,90 @@
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
-                                            <a class="btn btn-outline-info btn-sm square-btn"
-                                               title="{{ translate('barcode') }}"
-                                               href="{{ route('admin.products.barcode', [$product['id']]) }}">
-                                                <i class="tio-barcode"></i>
-                                            </a>
-                                            <a class="btn btn-outline-info btn-sm square-btn" title="View"
-                                               href="{{ route('admin.products.view',['addedBy'=>($product['added_by']=='seller'?'vendor' : 'in-house'),'id'=>$product['id']]) }}">
+                                            <span id="get-update-status-route" data-action="{{ route('admin.products.approve-status') }}"></span>
+
+
+                                            {{-- Standard View & Edit Buttons --}}
+                                            <a class="btn btn-outline-info btn-sm square-btn" title="{{ translate('view') }}"
+                                            href="{{route('admin.products.view',['addedBy'=>($product['added_by']=='seller'?'vendor' : 'in-house'),'id'=>$product['id']])}}">
                                                 <i class="tio-invisible"></i>
                                             </a>
                                             <a class="btn btn-outline--primary btn-sm square-btn"
-                                               title="{{ translate('edit') }}"
-                                               href="{{ route('admin.products.update',[$product['id']]) }}">
+                                            title="{{translate('edit')}}"
+                                            href="{{route('admin.products.update',[$product['id']])}}">
                                                 <i class="tio-edit"></i>
                                             </a>
-                                            <span class="btn btn-outline-danger btn-sm square-btn delete-data"
-                                               title="{{ translate('delete') }}"
-                                               data-id="product-{{ $product['id']}}">
-                                                <i class="tio-delete"></i>
-                                            </span>
+
+                                            {{--
+                                                APPROVAL & REJECTION LOGIC
+                                                This checks if the product is from a seller and is in a pending state.
+                                            --}}
+                                            @if($product['added_by'] == 'seller' && $product['request_status'] == 0)
+
+                                                {{-- Approve Button (using JavaScript helper) --}}
+                                                <a class="btn btn-outline-success btn-sm square-btn update-status" href="javascript:"
+                                                
+                                                title="{{translate('approve')}}"
+                                                data-id="{{ $product['id'] }}"
+                                                data-redirect-route="{{route('admin.products.list',['vendor', 'status' => $product['request_status']])}}"
+                                                data-message ="{{translate('want_to_approve_this_product').'?'}}"
+                                                data-status="1">
+                                                    <i class="tio-done"></i>
+                                                </a>
+
+                                                {{-- Reject Button (triggers a modal) --}}
+                                                <a class="btn btn-outline-danger btn-sm square-btn" href="javascript:"
+                                                title="{{translate('reject')}}"
+                                                data-toggle="modal" data-target="#publishNoteModal-{{$product['id']}}">
+                                                    <i class="tio-clear"></i>
+                                                </a>
+
+                                            @else
+                                                {{--
+                                                    If the product is NOT pending, show the standard delete button.
+                                                --}}
+                                                <a class="btn btn-outline-danger btn-sm square-btn delete-data" href="javascript:"
+                                                title="{{translate('delete')}}"
+                                                data-id="product-{{$product['id']}}">
+                                                    <i class="tio-delete"></i>
+                                                </a>
+                                            @endif
                                         </div>
-                                        <form action="{{ route('admin.products.delete',[$product['id']]) }}"
-                                              method="post" id="product-{{ $product['id']}}">
+
+                                        {{-- Hidden forms for Delete functionality and a unique Reject Modal for each product --}}
+                                        <form action="{{route('admin.products.delete',[$product['id']])}}"
+                                            method="post" id="product-{{$product['id']}}">
                                             @csrf @method('delete')
                                         </form>
+
+                                        {{--
+                                            IMPORTANT: This modal needs to be inside the loop to have a unique ID for each product.
+                                            This allows the correct product ID to be sent with the rejection note.
+                                        --}}
+                                        <div class="modal fade" id="publishNoteModal-{{$product['id']}}" tabindex="-1" aria-labelledby="exampleModalLabel"
+                                            aria-hidden="true">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="exampleModalLabel">{{ translate('rejection_note_for') }} "{{Str::limit($product['name'], 20)}}"</h5>
+                                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                            <span aria-hidden="true">&times;</span>
+                                                        </button>
+                                                    </div>
+                                                    <form class="form-group" action="{{ route('admin.products.deny', ['id'=>$product['id']]) }}"
+                                                        method="post">
+                                                        @csrf
+                                                        <div class="modal-body">
+                                                            <textarea class="form-control text-area-max-min" name="denied_note" rows="3" placeholder="{{translate('ex')}}: {{translate('quality_issue')}}"></textarea>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ translate('close') }}</button>
+                                                            <button type="submit" class="btn btn--primary">{{ translate('submit') }}</button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach

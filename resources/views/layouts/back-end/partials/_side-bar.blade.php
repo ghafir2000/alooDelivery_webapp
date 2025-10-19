@@ -326,7 +326,32 @@
                                     </li>
                                 </ul>
                             </li>
-
+                            <li class="navbar-vertical-aside-has-menu {{(Request::is('admin/brand*')) ?'active':''}}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle"
+                                   href="javascript:" title="{{translate('brand_setup')}}">
+                                    <i class="tio-filter-list nav-icon"></i>
+                                    <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
+                                        {{translate('brand_setup')}}
+                                    </span>
+                                </a>
+                                <ul class="js-navbar-vertical-aside-submenu nav nav-sub"
+                                    style="display: {{(Request::is('admin/brand/list*')) ? 'block':''}}">
+                                    <li class="nav-item {{Request::is('admin/brand/'.Brand::LIST[URI])?'active':''}}">
+                                        <a class="nav-link " href="{{route('admin.brand.list')}}"
+                                           title="{{translate('brands')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{translate('brands')}}</span>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item {{Request::is('admin/brand/'.Brand::ADD[URI])?'active':''}}">
+                                        <a class="nav-link " href="{{route('admin.brand.add-new')}}"
+                                           title="{{translate('add_brand')}}">
+                                            <span class="tio-circle nav-indicator-icon"></span>
+                                            <span class="text-truncate">{{translate('add_brand')}}</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
 
                             <li class="navbar-vertical-aside-has-menu {{Request::is('admin/attribute*')?'active':''}}">
                                 <a class="js-navbar-vertical-aside-menu-link nav-link"
@@ -891,6 +916,18 @@
                                                 <span class="text-truncate">{{translate('Business_Settings')}}</span>
                                             </a>
                                         </li>
+                                        <li class="navbar-vertical-aside-has-menu
+                                        {{ Request::is('admin/business-settings/'.BusinessSettings::SOCIAL_MEDIA[URI]) ? 'active' : '' }}
+                                        ">
+                                            <a class="js-navbar-vertical-aside-menu-link nav-link"
+                                            href="{{ route('admin.business-settings.social-media') }}"
+                                            title="{{ translate('Social_Media') }}">
+                                                <span class="tio-circle nav-indicator-icon"></span>
+                                                <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
+                                                    {{translate('Social_Media')}}
+                                                </span>
+                                            </a>
+                                        </li>
                                         
                                         <li class="navbar-vertical-aside-has-menu
                                         {{ Request::is('admin/business-settings/'.BusinessSettings::ANALYTICS_INDEX[URI]) ? 'active' : '' }}
@@ -990,14 +1027,15 @@
                                 </li>
 
                                 {{-- 3. THIRD PARTY INTEGRATIONS MENU --}}
-                                <li class="navbar-vertical-aside-has-menu {{ (
+                                <li class="navbar-vertical-aside-has-menu {{ 
                                     Request::is('admin/business-settings/mail*') ||
                                     Request::is('admin/business-settings/sms-module') ||
                                     Request::is('admin/business-settings/recaptcha*') ||
                                     Request::is('admin/business-settings/map-api') ||
                                     Request::is('admin/business-settings/payment-method') ||
-                                    Request::is('admin/social-login/view')
-                                    ) ? 'active' : '' }}">
+                                    Request::is('admin/social-login/view') ||
+                                    Request::is('admin/seo-settings*')
+                                     ? 'active' : '' }}">
                                     <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle"
                                     href="javascript:" title="{{translate('third_party')}}">
                                         <i class="tio-puzzle nav-icon"></i>
@@ -1016,6 +1054,12 @@
                                             <a class="nav-link" href="{{ route('admin.business-settings.sms-module') }}" title="{{ translate('third_party_settings') }}">
                                                 <span class="tio-circle nav-indicator-icon"></span>
                                                 <span class="text-truncate">{{ translate('third_party_settings') }}</span>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item {{ Request::is('admin/seo-settings/*') ? 'active' : '' }}">
+                                            <a class="nav-link" href="{{ route('admin.seo-settings.web-master-tool') }}" title="{{ translate('third_party_settings') }}">
+                                                <span class="tio-circle nav-indicator-icon"></span>
+                                                <span class="text-truncate">{{ translate('SEO_settings') }}</span>
                                             </a>
                                         </li>
                                     </ul>
