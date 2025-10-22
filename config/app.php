@@ -166,6 +166,8 @@ return [
         Illuminate\View\ViewServiceProvider::class,
         App\Providers\SocialLoginServiceProvider::class,
         Madnest\Madzipper\MadzipperServiceProvider::class,
+        Jenssegers\Agent\AgentServiceProvider::class,
+
 
         /*
          * Package Service Providers...
@@ -207,6 +209,7 @@ return [
     'aliases' => [
 
         'App' => Illuminate\Support\Facades\App::class,
+        'Agent' => Jenssegers\Agent\Facades\Agent::class,
         'Arr' => Illuminate\Support\Arr::class,
         'Artisan' => Illuminate\Support\Facades\Artisan::class,
         'Auth' => Illuminate\Support\Facades\Auth::class,
