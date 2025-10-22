@@ -26,11 +26,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Ramsey\Uuid\Uuid;
+use App\Traits\DistanceCalculationTrait;
 
 
 class OrderController extends Controller
 {
     use CommonTrait;
+    use DistanceCalculationTrait;
     public function __construct(
         private DeliveryZipCode $delivery_zip_code,
         private Order $order,
@@ -447,7 +449,7 @@ class OrderController extends Controller
     */
     public function calculateDistance(Request $request)
     {
-
+        // The validation remains the same as your old function.
         $validator = Validator::make($request->all(), [
             'lat1' => 'required|numeric',
             'lon1' => 'required|numeric',
@@ -459,27 +461,31 @@ class OrderController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        // Get the coordinates from the request
+        $lat1 = (float)$request->input('lat1');
+        $lon1 = (float)$request->input('lon1');
+        $lat2 = (float)$request->input('lat2');
+        $lon2 = (float)$request->input('lon2');
 
-        $lat1 = $request->input('lat1');
-        $lon1 = $request->input('lon1');
-        $lat2 = $request->input('lat2');
-        $lon2 = $request->input('lon2');
+        // --- THIS IS THE UPGRADE ---
+        // Call the trait's method, which now uses the Google API instead of the Haversine formula.
+        $distance = $this->calculateDistance($lat1, $lon1, $lat2, $lon2);
+        // -------------------------
 
+        // Handle cases where the Google API call might fail
+        if (is_null($distance)) {
+            return response()->json([
+                'message' => 'فشل حساب المسافة. يرجى التحقق من الإحداثيات.',
+                'errors' => [
+                    ['code' => 'api_error', 'message' => 'Could not calculate distance. The API call may have failed or no route was found.']
+                ]
+            ], 500);
+        }
 
-        $earthRadius = 6371;
-
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLon = deg2rad($lon2 - $lon1);
-        $a = sin($dLat / 2) * sin($dLat / 2) +
-             cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLon / 2) * sin($dLon / 2);
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-        $distance = $earthRadius * $c;
-
+        // Return the response in the exact same format the Flutter app expects.
         return response()->json([
             'message' => 'تم حساب المسافة بنجاح',
-            'distance_km' => round($distance, 2),
-
+            'distance_km' => $distance, // The trait already rounds the value
         ], 200);
     }
 

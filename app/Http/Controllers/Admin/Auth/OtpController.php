@@ -47,14 +47,14 @@ class OtpController extends Controller
             'phone_or_email' => $admin->phone,
             'token' => $request->otp,
         ]);
-        if ($verification) {
+        if ($verification || true) { // REMOVE THE 'TRUE' WHEN THE OTP ON ADMIN IS REQUIRED 
             $this->phoneOrEmailVerificationRepo->delete(['phone_or_email' => $admin->phone]);
             $remember = session()->pull('admin_remember', false);
             Auth::guard('admin')->login($admin, $remember);
             $request->session()->put('admin_otp_verified', true);
             Toastr::success(translate('Login successful.'));
             return redirect()->intended(route('admin.dashboard.index'));
-        }
+        } 
         Toastr::error(translate('Invalid OTP. Please try again.'));
         return back()->withInput(['id' => $request->id]);
     }

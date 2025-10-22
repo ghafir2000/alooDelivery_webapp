@@ -509,6 +509,7 @@ mark,
     height: auto;
 }
 
+
 .figure {
     display: inline-block;
 }
@@ -19401,4 +19402,29 @@ html[dir="rtl"] .badge-style {
 
 .overflow-y-hidden {
     overflow-y: hidden !important;
+}
+
+#shippingMapModal .modal-body,
+#billingMapModal .modal-body {
+    position: relative;
+}
+
+/*
+  Force the map canvas itself to the front. The position property
+  is crucial for z-index to work reliably here.
+*/
+#location_map_canvas,
+#billing-location-map-canvas {
+    position: relative;
+    z-index: 10;
+}
+
+/*
+  Force the search box and its dropdown results to be on the
+  absolute top layer so they are always visible and clickable.
+*/
+#pac-input,
+#pac-input-billing,
+.pac-container {
+    z-index: 2000 !important;
 }

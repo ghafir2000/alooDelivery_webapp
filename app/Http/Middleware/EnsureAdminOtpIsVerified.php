@@ -13,15 +13,15 @@ class EnsureAdminOtpIsVerified
         // If the user is logged in as an admin...
         if (Auth::guard('admin')->check()) {
             // ...but hasn't completed the OTP step in this session.
-            if (!$request->session()->get('admin_otp_verified')) {
+            // if (!$request->session()->get('admin_otp_verified')) {
                 
-                // Log them out to force the process again
-                Auth::guard('admin')->logout();
+            //     // Log them out to force the process again
+            //     Auth::guard('admin')->logout();
                 
-                // Redirect to their specific login URL
-                $loginUrl = getWebConfig(name: 'admin_login_url');
-                return redirect('/login/' . $loginUrl)->withErrors(['You must complete OTP verification.']);
-            }
+            //     // Redirect to their specific login URL
+            //     $loginUrl = getWebConfig(name: 'admin_login_url');
+            //     return redirect('/login/' . $loginUrl)->withErrors(['You must complete OTP verification.']);
+            // }
         }
 
         return $next($request);

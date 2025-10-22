@@ -204,7 +204,7 @@ Route::group(['namespace' => 'Admin', 'prefix' => 'admin', 'as' => 'admin.'], fu
 });
 
 
-Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin', 'verify-otp-admin']], function () {
+Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => ['admin']], function () { // add 'verify-otp-admin' to middlewares here so the otp for admin is active again , and change the admin auth otpController back to original state 
     Route::group(['prefix' => 'dashboard', 'as' => 'dashboard.'], function () {
         Route::controller(DashboardController::class)->group(function () {
 

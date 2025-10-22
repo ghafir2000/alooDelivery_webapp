@@ -112,7 +112,9 @@ Route::group(['namespace' => 'Web', 'middleware' => ['maintenance_mode', 'guestC
     });
 
     Route::group(['middleware' => ['auth:customer', 'customer']], function () {
+
         Route::controller(WebController::class)->group(function () {
+            Route::get('shipping-cost', 'getDistanceBasedShippingCost')->name('shipping-cost');
             Route::get('checkout-details', 'checkout_details')->name('checkout-details');
             Route::get('checkout-shipping', 'checkout_shipping')->name('checkout-shipping');
             Route::get('checkout-payment', 'checkout_payment')->name('checkout-payment');

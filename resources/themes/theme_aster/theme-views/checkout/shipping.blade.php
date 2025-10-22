@@ -27,7 +27,8 @@
                             <input type="hidden" id="billing-input-enable" name="billing_input_enable"
                                    value="{{ $billing_input_by_customer }}">
                             @if($physical_product_view)
-                                <form method="post" id="address-form">
+                                <form method="post" id="address-form" data-shipping-cost-url="{{ route('shipping-cost') }}">
+                                    <input type="hidden" id="chosen-shipping-method-id" value="{{ $chosenShippingMethodId ?? '' }}">
                                     <h5 class="mb-3 text-capitalize">{{ translate('delivery_information_details') }}</h5>
                                     <div class="d-flex flex-wrap justify-content-between gap-3 mb-3">
                                         <div class="d-flex flex-wrap gap-3 align-items-center">
@@ -108,7 +109,7 @@
                                                                                     <label
                                                                                         class="d-flex align-items-center gap-3 cursor-pointer mb-0">
                                                                                         <input type="radio"
-                                                                                               name="shipping_method_id"
+                                                                                               name="shipping_address_id"
                                                                                                value="{{$address['id']}}" {{$key==0?'checked':''}}>
                                                                                         <h6>{{$address['address_type']}}</h6>
                                                                                     </label>
@@ -149,6 +150,10 @@
                                                                                                 class="shipping-contact-country d-none">{{ $address['country'] }}</span>
                                                                                             <span
                                                                                                 class="shipping-contact-address-type d-none">{{ $address['address_type'] }}</span>
+                                                                                            <span  
+                                                                                                class="shipping-latitude d-none">{{ $address['latitude'] }}</span>
+                                                                                            <span 
+                                                                                                class="shipping-longitude d-none">{{ $address['longitude'] }}</span>
                                                                                         </dl>
                                                                                     </address>
                                                                                 </div>
@@ -463,7 +468,7 @@
                                                                                                 class="d-flex align-items-center gap-3 cursor-pointer mb-0">
                                                                                                 <input type="radio"
                                                                                                        value="{{$address['id']}}"
-                                                                                                       name="billing_method_id" {{$key==0?'checked':''}}>
+                                                                                                       name="billing_address_id" {{$key==0?'checked':''}}>
                                                                                                 <h6>{{$address['address_type']}}</h6>
                                                                                             </label>
                                                                                             <div
@@ -504,6 +509,10 @@
                                                                                                         class="billing-contact-country d-none">{{ $address['country'] }}</span>
                                                                                                     <span
                                                                                                         class="billing-contact-address-type d-none">{{ $address['address_type'] }}</span>
+                                                                                                    <span 
+                                                                                                       class="shipping-latitude d-none">{{ $address['latitude'] }}</span>
+                                                                                                    <span 
+                                                                                                        class="shipping-longitude d-none">{{ $address['longitude'] }}</span>
                                                                                                 </dl>
                                                                                             </address>
                                                                                         </div>
@@ -737,9 +746,6 @@
     <script src="{{ theme_asset('assets/js/shipping-page.js') }}"></script>
 
     @if(getWebConfig('map_api_status') ==1 )
-        <script
-            src="https://maps.googleapis.com/maps/api/js?key={{getWebConfig('map_api_key')}}&callback=mapsLoading&loading=async&libraries=places&v=3.56"
-            defer>
-        </script>
+        <script src="https://maps.googleapis.com/maps/api/js?key={{getWebConfig('map_api_key')}}&loading=async" defer></script>
     @endif
 @endpush

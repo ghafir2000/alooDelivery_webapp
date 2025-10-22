@@ -2,61 +2,63 @@
 
 namespace App\Http\Controllers\Web;
 
-use App\Contracts\Repositories\RobotsMetaContentRepositoryInterface;
-use App\Services\ProductService;
-use App\Traits\CacheManagerTrait;
-use App\Traits\InHouseTrait;
-use App\Models\User;
-use App\Traits\MaintenanceModeTrait;
-use App\Utils\CategoryManager;
-use App\Utils\Helpers;
-use App\Events\DigitalProductOtpVerificationEvent;
-use App\Http\Controllers\Controller;
-use App\Models\OfflinePaymentMethod;
-use App\Models\ShippingAddress;
-use App\Models\ShippingMethod;
-use App\Models\ShippingType;
-use App\Models\Shop;
-use App\Models\Subscription;
-use App\Models\OrderDetail;
-use App\Models\Review;
-use App\Models\Brand;
-use App\Models\BusinessSetting;
+use Carbon\Carbon;
 use App\Models\Cart;
-use App\Models\CartShipping;
-use App\Models\Category;
-use App\Models\Contact;
-use App\Models\Currency;
-use App\Models\DeliveryZipCode;
-use App\Models\DigitalProductOtpVerification;
+use App\Models\Shop;
+use App\Models\User;
+use App\Models\Brand;
 use App\Models\Order;
-use App\Models\Product;
-use App\Models\ProductCompare;
+use App\Models\Review;
 use App\Models\Seller;
+use App\Utils\Convert;
+use App\Utils\Helpers;
+use App\Models\Contact;
+use App\Models\Product;
 use App\Models\Setting;
+use App\Models\Category;
+use App\Models\Currency;
 use App\Models\Wishlist;
-use App\Traits\CommonTrait;
+use App\Utils\SMSModule;
 use App\Traits\SmsGateway;
 use App\Utils\CartManager;
-use App\Utils\Convert;
-use App\Utils\CustomerManager;
-use App\Utils\OrderManager;
-use App\Utils\ProductManager;
-use App\Utils\SMSModule;
-use Brian2694\Toastr\Facades\Toastr;
-use Carbon\Carbon;
 use Carbon\CarbonInterval;
-use Gregwar\Captcha\CaptchaBuilder;
-use Gregwar\Captcha\PhraseBuilder;
-use Illuminate\Contracts\View\View;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
+use App\Models\OrderDetail;
+use App\Traits\CommonTrait;
+use App\Utils\OrderManager;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Facades\Auth;
+use App\Models\CartShipping;
+use App\Models\ShippingType;
+use App\Models\Subscription;
+use App\Traits\InHouseTrait;
+use Illuminate\Http\Request;
+use App\Utils\ProductManager;
+use App\Models\ProductCompare;
+use App\Models\ShippingMethod;
+use App\Utils\CategoryManager;
+use App\Utils\CustomerManager;
+use App\Models\BusinessSetting;
+use App\Models\DeliveryZipCode;
+use App\Models\ShippingAddress;
+use App\Services\ProductService;
+use App\Traits\CacheManagerTrait;
+use Illuminate\Http\JsonResponse;
+use Gregwar\Captcha\PhraseBuilder;
 use Illuminate\Support\Facades\DB;
+use Gregwar\Captcha\CaptchaBuilder;
+use Illuminate\Contracts\View\View;
+use App\Http\Controllers\Controller;
+use App\Models\OfflinePaymentMethod;
+use App\Traits\MaintenanceModeTrait;
+use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Session;
+use App\Traits\DistanceCalculationTrait;
 use function App\Utils\payment_gateways;
+use Illuminate\Support\Facades\Validator;
+use App\Models\DigitalProductOtpVerification;
+use App\Events\DigitalProductOtpVerificationEvent;
+use App\Contracts\Repositories\RobotsMetaContentRepositoryInterface;
 
 class WebController extends Controller
 {
@@ -65,6 +67,7 @@ class WebController extends Controller
     use SmsGateway;
     use MaintenanceModeTrait;
     use CacheManagerTrait;
+    use DistanceCalculationTrait;
 
     public function __construct(
         private OrderDetail                                   $order_details,
@@ -397,6 +400,14 @@ class WebController extends Controller
             }
             return isset($response['redirect']) ? redirect($response['redirect']) : redirect('/');
         }
+        
+        // Get the main cart group ID for the current order
+        $cartGroupId = \App\Utils\CartManager::get_cart_group_ids(type: 'checked')[0] ?? null;
+
+        // Fetch the saved shipping choice from the database using the cart group ID
+        $chosenShipping = \App\Models\CartShipping::where('cart_group_id', $cartGroupId)->first();
+        $chosenShippingMethodId = $chosenShipping ? $chosenShipping->shipping_method_id : null;
+
 
         $countryRestrictStatus = getWebConfig(name: 'delivery_country_restriction');
         $zipRestrictStatus = getWebConfig(name: 'delivery_zip_code_area_restriction');
@@ -429,7 +440,85 @@ class WebController extends Controller
             'billing_input_by_customer' => $billingInputByCustomer,
             'default_location' => $defaultLocation,
             'shipping_addresses' => $shippingAddresses,
-            'billing_addresses' => $shippingAddresses
+            'billing_addresses' => $shippingAddresses,
+            'chosenShippingMethodId' => $chosenShippingMethodId,
+
+        ]);
+    }
+
+    public function getDistanceBasedShippingCost(Request $request): JsonResponse
+    {
+        logger('getDistanceBasedShippingCost is called with request: ', $request->all());
+        
+        $validator = Validator::make($request->all(), [
+            'destination_lat' => 'required|numeric',
+            'destination_lon' => 'required|numeric',
+            'shipping_method_id' => 'required|integer',
+            'cart_group_id' => 'required|string',
+        ]);
+
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // 1. Find the Seller's Origin Location from the cart group
+        $cart = Cart::where('cart_group_id', $request->cart_group_id)->first();
+        if (!$cart) {
+            logger('Cart group not found');
+            return response()->json(['message' => 'Cart group not found.'], 404);
+        }
+
+        $origin_lat = null;
+        $origin_lon = null;
+
+        if ($cart->seller_is == 'admin') {
+            $defaultLocation = getWebConfig(name: 'default_location');
+            $origin_lat = $defaultLocation['lat'] ?? null;
+            $origin_lon = $defaultLocation['lng'] ?? null;
+        } else {
+            $shop = Shop::where('seller_id', $cart->seller_id)->first();
+            if ($shop && $shop->latitude && $shop->longitude) {
+                $origin_lat = $shop->latitude;
+                $origin_lon = $shop->longitude;
+            }
+        }
+
+        if (is_null($origin_lat) || is_null($origin_lon)) {
+            logger('Seller location is not configured');
+            return response()->json(['message' => 'Seller location is not configured.'], 404);
+        }
+
+        // 2. Get the Shipping Method and its Cost Per KM
+        $shippingMethod = ShippingMethod::find($request->shipping_method_id);
+        if (!$shippingMethod) {
+            logger('Shipping method not found');
+            return response()->json(['message' => 'Shipping method not found.'], 404);
+        }
+
+
+        // 3. Calculate Distance using the new trait
+        $distance = $this->calculateDistance(
+            (float)$origin_lat,
+            (float)$origin_lon,
+            (float)$request->destination_lat,
+            (float)$request->destination_lon
+        );
+        logger("calculated distance at : $distance");
+
+        if (is_null($distance)) {
+            logger('Could not calculate delivery distance. Please check the address.');
+            return response()->json(['message' => 'Could not calculate delivery distance. Please check the address.'], 500);
+        }
+
+        // This example uses a base cost + distance cost. Adjust if you only want distance cost.
+        $totalCost = $distance * $shippingMethod->cost;
+
+        return response()->json([
+            'is_distance_based' => true,
+            'distance_km' => $distance,
+            'final_cost_raw' => $totalCost,
+            'cost_formatted' => Helpers::currency_converter($totalCost),
         ]);
     }
 
@@ -754,6 +843,8 @@ class WebController extends Controller
             'isNewCustomerInSession' => $isNewCustomerInSession,
         ]);
     }
+
+    
 
     public function checkout_complete_wallet(Request $request = null)
     {
