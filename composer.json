@@ -27,6 +27,7 @@
         "guzzlehttp/guzzle": "^7.2",
         "intervention/image": "^2.7",
         "iyzico/iyzipay-php": "^2.0",
+        "jenssegers/agent": "*",
         "kreait/firebase-php": "^7.0",
         "laravel/framework": "^10.10",
         "laravel/passport": "^12.3",
